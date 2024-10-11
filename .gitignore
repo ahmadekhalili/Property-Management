@@ -1,0 +1,5 @@
+__pycache__
+property_management/media/
+property_management/.idea/
+.idea/
+**/.env
