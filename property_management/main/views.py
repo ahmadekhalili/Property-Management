@@ -14,7 +14,7 @@ from .crawl import crawl_files
 
 env = environ.Env()
 environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
-username, password, db_name = quote_plus(env('MONGO_USERNAME')), quote_plus(env('MONGO_USERPASS')), env('MONGO_DBNAME')
+username, password, db_name = quote_plus(env('MONGO_USER_NAME')), quote_plus(env('MONGO_USER_PASS')), env('MONGO_DBNAME')
 auth_source, host = env('MONGO_SOURCE'), env('MONGO_HOST')
 uri = f"mongodb://{username}:{password}@{host}:27017/{db_name}?authSource={auth_source}"
 mongo_db = pymongo.MongoClient(uri)[db_name]
