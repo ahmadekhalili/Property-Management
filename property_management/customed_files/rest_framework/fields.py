@@ -16,4 +16,9 @@ class DecimalFile(serializers.CharField):
             return value
 
 
+class ListSerializer(serializers.Field):  # simple field used to give/receive python list or...
+    def to_internal_value(self, data):
+        return data
 
+    def to_representation(self, value):
+        return value

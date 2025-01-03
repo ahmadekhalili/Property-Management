@@ -113,8 +113,9 @@ class FileCrawl:
         except Exception as e:
             print(f"An error occurred: {e}")
 
-    def crawl_extra_data(self, driver):  # opens "نمایش همهٔ جزئیات" button and crawl all informations
+    def crawl_extra_data(self, driver):  # opens "نمایش همهٔ جزئیات" button and crawl all information
         button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[@role='button' and .//p[text()='نمایش همهٔ جزئیات']]")))
+        driver.execute_script("arguments[0].scrollIntoView(true);", button)  # scroll to get element in view (important)
         button.click()  # Click the outer div button
 
         try:
@@ -194,12 +195,13 @@ def crawl_files(location_to_search, max_files=None):
     # Scroll down and add all founded card to 'cards'
     cards = []       # using set() make unordered of cards
     while True:
-        cards_on_screen = driver.find_elements(By.CSS_SELECTOR, '.post-list__widget-col-c1444')
+        cards_on_screen = driver.find_elements(By.CSS_SELECTOR, 'article.kt-new-post-card')
         for card in cards_on_screen:
             try:
                 title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-post-card__title')  # Find title of card
+                if not title_elements:
+                    title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-new-post-card__title')
                 card_url = card.find_element(By.TAG_NAME, 'a').get_attribute('href')  # Find the url of the card
-
                 # some carts are blank or duplicate crawling. required to be checked here
                 if card_url and title_elements and card_url not in cards and \
                         (not max_files or len(cards) < max_files):  # Note '<=' is false!
@@ -220,8 +222,7 @@ def crawl_files(location_to_search, max_files=None):
             break
         last_height = new_height
 
-    files = []
-    errors = {}    # if some files not crawled, trace them in error list
+    files, errors = [], {}    # if some files not crawled, trace them in error list
     for card_url in cards:
         driver.get(card_url)
         time.sleep(2)

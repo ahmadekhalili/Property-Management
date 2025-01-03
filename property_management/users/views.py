@@ -98,6 +98,17 @@ class SignUp(views.APIView):
         return Response({'message': _('verification code is incorrect')})
 
 
+class TestSignUp(views.APIView):
+    def post(self, request, *args, **kwargs):    # create user with phone (without sms)
+        '''
+        input in POST = {"csrfmiddlewaretoken": "...", "phone": "...", "password1": "...", "password2": "..."}__________
+        input in header cookie = {"csrftoken": "..."}
+        '''
+        #SessionAuthenticationCustom().enforce_csrf(request)
+        serializer = UserSerializer(User.objects.create(phone=request.data['phone']))
+        return Response({'message': _('user successfully created.'), **serializer.data})
+
+
 class UserUpdate(views.APIView):
     permission_classes = [IsAuthenticated]
     def put(self, request, *args, **kwargs):                #connect like this:   http PUT http://192.168.114.21:3000/users/update/ cookie:"sessionid=87y70z4bnj6kj9698qbpas1a0w3ncfpx; csrftoken=SSp1m9eJ7mHuIncE88iEwF2VzspDFi7uOWlXamzNjd1vDZT9YjxrFgNjyDUIs7wQ" first_name="تچیز" csrfmiddlewaretoken=KZNz210BMpQLjRurCxxMtDnILetmQxMDG3JvQelFYgaMetbWsIMzCe86KpYrDmbZ        important: if you dont pot partial=True always raise error

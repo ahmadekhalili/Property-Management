@@ -30,7 +30,7 @@ from drf_extra_fields.fields import Base64ImageField
 from .models import *
 from .methods import comment_save_to_mongo, get_category_and_fathers
 from customed_files.rest_framework.classes.validators import MongoUniqueValidator
-from customed_files.rest_framework.fields import DecimalFile
+from customed_files.rest_framework.fields import DecimalFile, ListSerializer
 from users.serializers import UserNameSerializer
 from users.methods import user_name_shown
 from users.models import User
@@ -75,7 +75,7 @@ class ReplySerializer(serializers.ModelSerializer):  # not implemented
 
 
 class CommentListSerializer(MongoListSerializer):
-    def update(self, _id, serialized):  # _id and serialized are both list
+    def updatee(self, _id, serialized):  # _id and serialized are both list
         updates = []
         for comment_id, comment_data in zip(_id, serialized):
             update_set = {f'comments.$.{key}': comment_data[key] for key in comment_data}
@@ -90,7 +90,6 @@ class CommentListSerializer(MongoListSerializer):
 
 statuses = [('1', _('not checked')), ('2', _('confirmed')), ('3', _('not confirmed')), ('4', _('deleted'))]
 class CommentSerializer(MongoSerializer):
-    _id = IdMongoField(mongo_update=True, required=False)   # in creation automatically generates _id in to_internal
     username = serializers.CharField(max_length=30, default='کاربر')  # 'name' raise error! (when is inside )
     email = serializers.EmailField(required=False)
     status = serializers.ChoiceField(choices=statuses, default='1')
@@ -116,14 +115,10 @@ class CommentSerializer(MongoSerializer):
 
     def to_internal_value(self, data):
         request, change = self.context.get('request') or self.request, self.context.get('change', False)
-
         if not change and not data.get('username'):
             data['username'] = user_name_shown(request.user, 'کاربر') if request.user else 'کاربر'
 
         internal_value = super().to_internal_value(data)
-
-        if not change:
-            internal_value['_id'] = ObjectId()
 
         if request and request.user and not change:  # in updating, user is not required
             internal_value['author'] = request.user
@@ -151,7 +146,6 @@ class CommentSerializer(MongoSerializer):
 
 
 class OneToMultipleImageMongo(OneToMultipleImage, MongoSerializer):
-    _id = IdMongoField(mongo_update=True, required=False)
 
     def update(self, _id, serialized):
         if serialized[0].get('image'):
@@ -181,7 +175,7 @@ class OneToMultipleImageMongo(OneToMultipleImage, MongoSerializer):
 
 
 class ImageListSerializer(MongoListSerializer):
-    def update(self, _id, serialized):  # _id and serialized are both list
+    def updatee(self, _id, serialized):  # _id and serialized are both list
         if _id:         # update images
             updates = []
             for id, data in zip(_id, serialized):
@@ -204,7 +198,6 @@ class ImageListSerializer(MongoListSerializer):
 
 class ImageSerializer(MongoSerializer):
     # image can be url too (like: 'http:....')
-    _id = IdMongoField(mongo_update=True, required=False)
     name = serializers.CharField(max_length=100, required=False)
     image = serializers.CharField(allow_null=True, required=False)  # image can be url('http..')|Base64|python open
     alt = serializers.CharField(max_length=100, allow_blank=True, default='')
@@ -236,7 +229,7 @@ class ImageSerializer(MongoSerializer):
             internal_value['image'] = img
         return internal_value
 
-    def update(self, _id, serialized):
+    def updatee(self, _id, serialized):
         update_set = {f'images.$.{key}': serialized[key] for key in serialized}
         self.mongo_collection.update_one({'_id': ObjectId(self.father_id), 'images._id': _id}, {'$set': update_set})
         return serialized
@@ -366,7 +359,7 @@ class FileListMongoSerializer(MongoListSerializer):
     # data_update = {'title': uuid.uuid4().hex[:2], 'images': [{'_id': '67012184cc642f46deced213', 'alt': 'OOO'}]}
     # FileMongoSerializer(_id='67012184...', data=data_update, request=request, partial=True)
     # FileMongoSerializer(_id=['67012184...'], data=[data_update], request=request, many=True, partial=True)
-    def update(self, _id, validated_data):
+    def updatee(self, _id, validated_data):
         # update fields
         list_of_serialized = super().update(_id, validated_data)
         updates = []
@@ -399,7 +392,7 @@ class FileMongoSerializer(MongoSerializer):
     # [title, description, request.user/author required
     file_id = serializers.CharField(read_only=True, validators=[MongoUniqueValidator(mongo_db.file, 'file_id')])
     title = serializers.CharField(validators=[MongoUniqueValidator(mongo_db.file, 'title')], max_length=255)
-    slug = serializers.SlugField(allow_unicode=True, required=False)    # slug generates from title (in to_internal_value)
+    slug = serializers.SlugField(allow_unicode=True, required=False)  # slug generates from title (in to_internal_value)
     published_date = TimestampField(auto_now_add=True, jalali=True, required=False)
     updated = TimestampField(auto_now=True, jalali=True, required=False)
     meta_title = serializers.CharField(allow_blank=True, max_length=60, required=False, default='')
@@ -426,7 +419,7 @@ class FileMongoSerializer(MongoSerializer):
     view_type = serializers.JSONField(required=False)
     document_type = serializers.JSONField(required=False)
     job = serializers.JSONField(required=False)
-    features = serializers.ListSerializer(child=serializers.CharField(max_length=100, required=False), required=False)
+    features = ListSerializer(required=False)
 
     icon = OneToMultipleImageMongo(sizes=['240', '420', '640', '720', '960', '1280', 'default'], upload_to='file_images/icons/', required=False)
     images = ImageSerializer(many=True, upload_to='file_images/', required=False)
@@ -447,8 +440,13 @@ class FileMongoSerializer(MongoSerializer):
         self._context = value
 
     def to_internal_value(self, data):
-        if not data.get('slug') and data.get('title'):
-            data['slug'] = slugify(data['title'], allow_unicode=True)  # data==request.data==self.initial_data mutable
+        if isinstance(data, dict):
+            if not data.get('slug') and data.get('title'):
+                data['slug'] = slugify(data['title'], allow_unicode=True)  # data==request.data==self.initial_data mutable
+        else:  # data list
+            for dct in data:
+                if not dct.get('slug') and dct.get('title'):
+                    dct['slug'] = slugify(dct['title'], allow_unicode=True)
         internal_value = super().to_internal_value(data)
 
         request, change = self.context.get('request'), self.context.get('change', False)
@@ -465,6 +463,7 @@ class FileMongoSerializer(MongoSerializer):
             internal_value['category'] = cat
         if not change:
             # if provide author id in request.data, 'internal_value' contain user.
+            print('1111111111111', internal_value.get('author'))
             if not internal_value.get('author') and request and request.user.is_authenticated:
                 internal_value['author'] = request.user
             else:

@@ -8,10 +8,18 @@ from .models import User
 
 
 class CustomUserCreationForm(UserCreationForm):
-    #phone = PhoneNumberField()
+    # phone = PhoneNumberField()
+
     class Meta(UserCreationForm):
         model = User
         fields = ('phone',)
+
+    def save(self, commit=True):  # without this, in creation (with phone and pass) raise error
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get('email') or None
+        if commit:
+            user.save()
+        return user
 
 
 class CustomUserChangeForm(UserChangeForm):
