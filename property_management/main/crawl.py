@@ -173,6 +173,7 @@ def crawl_files(location_to_search, max_files=None):
     # open the chrome with current cookies
     chrome_options = Options()
     chrome_profile_path = "C:/Users/akh/AppData/Local/Google/Chrome/User Data/Profile 4"  # Path to your Chrome profile
+    chrome_options.add_argument("--headless")  # crawl without graphical interface, used in linux servers
     chrome_options.add_argument(f"user-data-dir={chrome_profile_path}")
     chrome_options.add_argument("--disable-extensions")
 
@@ -195,7 +196,7 @@ def crawl_files(location_to_search, max_files=None):
     # Scroll down and add all founded card to 'cards'
     cards = []       # using set() make unordered of cards
     while True:
-        cards_on_screen = driver.find_elements(By.CSS_SELECTOR, 'article.kt-new-post-card')
+        cards_on_screen = driver.find_elements(By.CSS_SELECTOR, 'article.kt-post-card')
         for card in cards_on_screen:
             try:
                 title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-post-card__title')  # Find title of card
@@ -213,6 +214,7 @@ def crawl_files(location_to_search, max_files=None):
                 print(f"Could not retrieve title for card: {e}")
 
         # Scroll down to the bottom of the page
+        break
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1)  # Wait for the page to load new cards
         # Get the new scroll height and compare with the last scroll height

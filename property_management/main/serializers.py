@@ -419,7 +419,7 @@ class FileMongoSerializer(MongoSerializer):
     view_type = serializers.JSONField(required=False)
     document_type = serializers.JSONField(required=False)
     job = serializers.JSONField(required=False)
-    features = ListSerializer(required=False)
+    features = ListSerializer(required=False)       # like: ['آسانسور', 'پارکینگ', 'پکیج']
 
     icon = OneToMultipleImageMongo(sizes=['240', '420', '640', '720', '960', '1280', 'default'], upload_to='file_images/icons/', required=False)
     images = ImageSerializer(many=True, upload_to='file_images/', required=False)
@@ -463,7 +463,6 @@ class FileMongoSerializer(MongoSerializer):
             internal_value['category'] = cat
         if not change:
             # if provide author id in request.data, 'internal_value' contain user.
-            print('1111111111111', internal_value.get('author'))
             if not internal_value.get('author') and request and request.user.is_authenticated:
                 internal_value['author'] = request.user
             else:
