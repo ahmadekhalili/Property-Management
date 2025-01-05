@@ -177,6 +177,11 @@ def crawl_files(location_to_search, max_files=None):
     chrome_options.add_argument(f"user-data-dir={chrome_profile_path}")
     chrome_options.add_argument("--disable-extensions")
 
+    chrome_options.add_argument('--no-sandbox')  # these args required in linux servers (headless mode)
+    chrome_options.add_argument('--disable-dev-shm-usage')  # Fixes error related to shared memory usage
+    chrome_options.add_argument('--remote-debugging-port=9222')  # Optional: enables debugging port
+    chrome_options.add_argument('--disable-gpu')  # Disables GPU hardware acceleration (useful for headless mode)
+
     # important: you have to manually fill browser cookie (login and add city)
     driver = webdriver.Chrome(options=chrome_options)
 
@@ -214,7 +219,6 @@ def crawl_files(location_to_search, max_files=None):
                 print(f"Could not retrieve title for card: {e}")
 
         # Scroll down to the bottom of the page
-        break
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1)  # Wait for the page to load new cards
         # Get the new scroll height and compare with the last scroll height
