@@ -503,10 +503,12 @@ class FileMongoSerializer(MongoSerializer):
         except:
             return value             # value could be like: 'qabl az 1370' but still should be save
 
-    def validate_floor_number(self, value):    # could be string like: '5 az 6' or '5 az hamkaf' ...
+    def validate_floor_number(self, value):    # could be string like: '5 az 6' or '5 az hamkaf' or 'hamkaf' or ...
         if isinstance(value, int):
             return value
         else:
+            if value == 'همکف':
+                return '0'
             try:
                 result = re.findall(r'\d+', value)   # take first sequence of number
                 if result:

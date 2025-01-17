@@ -52,9 +52,10 @@ class FileCrawl:
                 p_element = None
             if p_element:
                 texts.append(p_element.text)
-        total_price = texts[0]
-        price_per_meter = texts[1]
-        floor_number = texts[2]
+        if len(texts) == 4:     # texts[0] == 'bale' | 'kheir' some properties have it.
+             total_price, price_per_meter, floor_number = texts[1], texts[2], texts[3]
+        else:
+            total_price, price_per_meter, floor_number = texts[0], texts[1], texts[2]
         self.file['total_price'], self.file['price_per_meter'], self.file['floor_number'] = total_price, price_per_meter, floor_number
 
         # Extract پارکینگ، آسانسور، انباری، بالکن information
