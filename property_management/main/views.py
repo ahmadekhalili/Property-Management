@@ -3,12 +3,17 @@ from django.contrib.sites.models import Site
 from rest_framework.response import Response
 from rest_framework import views
 
-import jwt
+
 from mongoserializer.methods import ResponseMongo
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import jwt
 
 from .serializers import *
 from .methods import get_page_count
-from .crawl import crawl_files
+from .crawl import crawl_files, setup_driver
 
 
 env = environ.Env()
@@ -82,6 +87,72 @@ class FileDetail(views.APIView):
             s.save()
         else:
             return Response(s.errors)
+
+
+divar_verification_code = {'code': ''}
+class SmsCode(views.APIView):
+    def get(self, request, *args, **kwargs):
+        return Response(divar_verification_code)
+
+    def post(self, request, *args, **kwargs):
+        divar_verification_code['code'] = request.data['code']
+        return Response({'status': f"{divar_verification_code['code']} successfully set."})
+
+
+class LoginDivar(views.APIView):
+    # send verification code and wait to submit it in SmsCode.post and receive it and login to save credentials
+    def get(self, request, *args, **kwargs):
+        return ResponseMongo({'phone': 'post your phone to log in divar.ir, like: 9102337665'})
+
+    def post(self, request, *args, **kwargs):
+        # 1 set location 'tehran' to cookie  2 after send SMS code, logged in. both saves in the current chrome profile
+        # without login, some properties' phone not shown
+        phone_number = '9102337664'#request.data['phone']
+        driver = setup_driver()
+
+        url = "https://divar.ir/s/tehran/buy-apartment"
+        driver.get(url)  # Load the web page
+        time.sleep(2)
+
+        # add location 'tehran' to the site
+        cookies = [{"name": "city", "value": "tehran", "domain": ".divar.ir"},
+                   {"name": "multi-city", "value": "tehran%7C", "domain": ".divar.ir"}]
+        for cookie in cookies:
+            driver.add_cookie(cookie)
+        driver.refresh()
+
+        # 'دیوار من' button
+        navbar_button = driver.find_element(By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")
+        navbar_button.click()
+        time.sleep(1)
+
+        # button 'ورود'
+        vorod_button = driver.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
+        vorod_button.click()
+        time.sleep(2)
+
+        # enter phone number in the input to send verification
+        input_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='شمارهٔ موبایل']")))
+        input_field.send_keys(phone_number)
+        time.sleep(1)
+
+        # wait until send verification code
+        status = ''
+        global divar_verification_code
+        for i in range(100):
+            if divar_verification_code['code']:
+                input_field = driver.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
+                input_field.send_keys(divar_verification_code['code'])
+                status = 'ok'
+                divar_verification_code['code'] = ''     # this global variable must reset
+                break
+            else:
+                time.sleep(4)
+        time.sleep(8)
+        if status:
+            return Response({'status': 'successfully logged in'})
+        else:
+            return Response({'status': "couldn't log into divar.ir, reset in '/sms_code_divar' GET, and try again"})
 
 
 class FileCrawl(views.APIView):

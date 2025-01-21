@@ -171,13 +171,13 @@ class FileCrawl:
 
 
 
-def crawl_files(location_to_search, max_files=None):
+def setup_driver():
     # open the chrome with current cookies
     chrome_options = Options()
     if os.name == 'nt':  # project running in a Windows os
         chrome_profile_path = "C:/Users/akh/AppData/Local/Google/Chrome/User Data/Profile 4"  # your Chrome profile
 
-    else:         # project running in a linux os
+    else:  # project running in a linux os
         chrome_profile_path = "/root/.config/google-chrome/myprofile"
     if not os.path.exists(chrome_profile_path):  # need to be created before running the crawler
         raise FileNotFoundError(f"The specified Chrome profile path does not exist: {chrome_profile_path}")
@@ -189,19 +189,15 @@ def crawl_files(location_to_search, max_files=None):
     chrome_options.add_argument('--disable-dev-shm-usage')  # Fixes error related to shared memory usage
     chrome_options.add_argument('--remote-debugging-port=9222')  # Optional: enables debugging port
     chrome_options.add_argument('--disable-gpu')  # Disables GPU hardware acceleration (useful for headless mode)
+    return webdriver.Chrome(options=chrome_options)
 
-    # important: you have to manually fill browser cookie (login and add city)
-    driver = webdriver.Chrome(options=chrome_options)
+
+def crawl_files(location_to_search, max_files=None):
+    driver = setup_driver()
 
     url = "https://divar.ir/s/tehran/buy-apartment"
     driver.get(url)     # Load the web page
     time.sleep(2)
-
-    # add location 'tehran' to the site
-    cookies = [{"name": "city", "value": "tehran", "domain": ".divar.ir"}, {"name": "multi-city", "value": "tehran%7C", "domain": ".divar.ir"}]
-    for cookie in cookies:
-        driver.add_cookie(cookie)
-    driver.refresh()
 
     # search box
     search_input = driver.find_element(By.CSS_SELECTOR, 'input.kt-nav-text-field__input')
