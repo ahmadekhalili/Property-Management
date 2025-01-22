@@ -124,24 +124,33 @@ class LoginDivar(views.APIView):
         # 'دیوار من' button
         navbar_button = driver.find_element(By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")
         navbar_button.click()
-        time.sleep(1)
 
+        # first get parent element to find sub elements without errors
+        dropdown = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[@class='kt-dropdown-menu__menu kt-dropdown-menu__menu--no-smooth kt-dropdown-menu__menu--open']")))
+
+        try:
+            logout_button = dropdown.find_element("xpath", "//button[contains(., 'خروج')]")  # if not found raise
+            if logout_button:
+                return Response({'status': 'user has logged in before'})
+        except:      # continue running
+            pass
         # button 'ورود'
-        vorod_button = driver.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
-        vorod_button.click()
-        time.sleep(2)
+        vorod_button = dropdown.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
+        driver.execute_script("arguments[0].click();", vorod_button)
+
+        # first get parent_box to find sub elements without errors
+        parent_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//section[@class='kt-new-modal kt-new-modal--stickyfooter']")))
 
         # enter phone number in the input to send verification
-        input_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='شمارهٔ موبایل']")))
+        input_field = parent_box.find_element(By.XPATH, "//input[@placeholder='شمارهٔ موبایل']")
         input_field.send_keys(phone_number)
-        time.sleep(1)
 
         # wait until send verification code
         status = ''
         global divar_verification_code
         for i in range(100):
             if divar_verification_code['code']:
-                input_field = driver.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
+                input_field = parent_box.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
                 input_field.send_keys(divar_verification_code['code'])
                 status = 'ok'
                 divar_verification_code['code'] = ''     # this global variable must reset
