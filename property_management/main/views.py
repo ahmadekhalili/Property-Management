@@ -110,58 +110,63 @@ class LoginDivar(views.APIView):
         phone_number = '9102337664'#request.data['phone']
         driver = setup_driver()
 
-        url = "https://divar.ir/s/tehran/buy-apartment"
-        driver.get(url)  # Load the web page
-        time.sleep(2)
-
-        # add location 'tehran' to the site
-        cookies = [{"name": "city", "value": "tehran", "domain": ".divar.ir"},
-                   {"name": "multi-city", "value": "tehran%7C", "domain": ".divar.ir"}]
-        for cookie in cookies:
-            driver.add_cookie(cookie)
-        driver.refresh()
-
-        # 'دیوار من' button
-        navbar_button = driver.find_element(By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")
-        navbar_button.click()
-
-        # first get parent element to find sub elements without errors
-        dropdown = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[@class='kt-dropdown-menu__menu kt-dropdown-menu__menu--no-smooth kt-dropdown-menu__menu--open']")))
-
         try:
-            logout_button = dropdown.find_element("xpath", "//button[contains(., 'خروج')]")  # if not found raise
-            if logout_button:
-                return Response({'status': 'user has logged in before'})
-        except:      # continue running
-            pass
-        # button 'ورود'
-        vorod_button = dropdown.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
-        driver.execute_script("arguments[0].click();", vorod_button)
+            url = "https://divar.ir/s/tehran/buy-apartment"
+            driver.get(url)  # Load the web page
+            time.sleep(2)
 
-        # first get parent_box to find sub elements without errors
-        parent_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//section[@class='kt-new-modal kt-new-modal--stickyfooter']")))
+            # add location 'tehran' to the site
+            cookies = [{"name": "city", "value": "tehran", "domain": ".divar.ir"},
+                       {"name": "multi-city", "value": "tehran%7C", "domain": ".divar.ir"}]
+            for cookie in cookies:
+                driver.add_cookie(cookie)
+            driver.refresh()
 
-        # enter phone number in the input to send verification
-        input_field = parent_box.find_element(By.XPATH, "//input[@placeholder='شمارهٔ موبایل']")
-        input_field.send_keys(phone_number)
+            # 'دیوار من' button
+            navbar_button = driver.find_element(By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")
+            navbar_button.click()
 
-        # wait until send verification code
-        status = ''
-        global divar_verification_code
-        for i in range(100):
-            if divar_verification_code['code']:
-                input_field = parent_box.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
-                input_field.send_keys(divar_verification_code['code'])
-                status = 'ok'
-                divar_verification_code['code'] = ''     # this global variable must reset
-                break
+            # first get parent element to find sub elements without errors
+            dropdown = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[@class='kt-dropdown-menu__menu kt-dropdown-menu__menu--no-smooth kt-dropdown-menu__menu--open']")))
+
+            try:
+                logout_button = dropdown.find_element("xpath", "//button[contains(., 'خروج')]")  # if not found raise
+                if logout_button:
+                    return Response({'status': 'user has logged in before'})
+            except:      # continue running
+                pass
+            # button 'ورود'
+            vorod_button = dropdown.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
+            driver.execute_script("arguments[0].click();", vorod_button)
+
+            # first get parent_box to find sub elements without errors
+            parent_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//section[@class='kt-new-modal kt-new-modal--stickyfooter']")))
+
+            # enter phone number in the input to send verification
+            input_field = parent_box.find_element(By.XPATH, "//input[@placeholder='شمارهٔ موبایل']")
+            input_field.send_keys(phone_number)
+
+            # wait until send verification code
+            status = ''
+            global divar_verification_code
+            for i in range(100):
+                if divar_verification_code['code']:
+                    input_field = parent_box.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
+                    input_field.send_keys(divar_verification_code['code'])
+                    status = 'ok'
+                    divar_verification_code['code'] = ''     # this global variable must reset
+                    break
+                else:
+                    time.sleep(4)
+            time.sleep(8)
+            if status:
+                return Response({'status': 'successfully logged in'})
             else:
-                time.sleep(4)
-        time.sleep(8)
-        if status:
-            return Response({'status': 'successfully logged in'})
-        else:
-            return Response({'status': "couldn't log into divar.ir, reset in '/sms_code_divar' GET, and try again"})
+                return Response({'status': "couldn't log into divar.ir, reset in '/sms_code_divar' GET, and try again"})
+        except Exception as e:
+            raise e
+        finally:
+            driver.quit()
 
 
 class FileCrawl(views.APIView):

@@ -199,60 +199,65 @@ def crawl_files(location_to_search, max_files=None):
     driver.get(url)     # Load the web page
     time.sleep(2)
 
-    # search box
-    search_input = driver.find_element(By.CSS_SELECTOR, 'input.kt-nav-text-field__input')
-    search_input.send_keys(location_to_search)  # type in search box to search
-    search_input.send_keys(Keys.ENTER)
-    time.sleep(1)
+    try:
+        # search box
+        search_input = driver.find_element(By.CSS_SELECTOR, 'input.kt-nav-text-field__input')
+        search_input.send_keys(location_to_search)  # type in search box to search
+        search_input.send_keys(Keys.ENTER)
+        time.sleep(1)
 
-    # Initialize variables to track scroll position and loaded cards
-    last_height = driver.execute_script("return document.body.scrollHeight")
+        # Initialize variables to track scroll position and loaded cards
+        last_height = driver.execute_script("return document.body.scrollHeight")
 
-    # Scroll down and add all founded card to 'cards'
-    cards = []       # using set() make unordered of cards
-    while True:
-        cards_on_screen = driver.find_elements(By.CSS_SELECTOR, 'article.kt-post-card')
-        for card in cards_on_screen:
+        # Scroll down and add all founded card to 'cards'
+        cards = []       # using set() make unordered of cards
+        while True:
+            cards_on_screen = driver.find_elements(By.CSS_SELECTOR, 'article.kt-post-card')
+            for card in cards_on_screen:
+                try:
+                    title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-post-card__title')  # Find title of card
+                    if not title_elements:
+                        title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-new-post-card__title')
+                    card_url = card.find_element(By.TAG_NAME, 'a').get_attribute('href')  # Find the url of the card
+                    # some carts are blank or duplicate crawling. required to be checked here
+                    if card_url and title_elements and card_url not in cards and \
+                            (not max_files or len(cards) < max_files):  # Note '<=' is false!
+                        title = title_elements[0].text
+                        cards.append(card_url)
+                    else:                   # some carts are blank, required to skip them
+                        pass
+                except Exception as e:
+                    print(f"Could not retrieve title for card: {e}")
+
+            # Scroll down to the bottom of the page
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)  # Wait for the page to load new cards
+            # Get the new scroll height and compare with the last scroll height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            # If the scroll height hasn't changed, we've reached end of scroll
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+        files, errors = [], {}    # if some files not crawled, trace them in error list
+        for card_url in cards:
+            driver.get(card_url)
+            time.sleep(2)
+            file_crawl = FileCrawl()
             try:
-                title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-post-card__title')  # Find title of card
-                if not title_elements:
-                    title_elements = card.find_elements(By.CSS_SELECTOR, '.kt-new-post-card__title')
-                card_url = card.find_element(By.TAG_NAME, 'a').get_attribute('href')  # Find the url of the card
-                # some carts are blank or duplicate crawling. required to be checked here
-                if card_url and title_elements and card_url not in cards and \
-                        (not max_files or len(cards) < max_files):  # Note '<=' is false!
-                    title = title_elements[0].text
-                    cards.append(card_url)
-                else:                   # some carts are blank, required to skip them
-                    pass
+                file_crawl.crawl_file(driver)  # fills .file
+                file_crawl.file['url'] = card_url
             except Exception as e:
-                print(f"Could not retrieve title for card: {e}")
+                errors['cart_url'] = str(e)
+            files.append(file_crawl.file)
 
-        # Scroll down to the bottom of the page
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(1)  # Wait for the page to load new cards
-        # Get the new scroll height and compare with the last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        # If the scroll height hasn't changed, we've reached end of scroll
-        if new_height == last_height:
-            break
-        last_height = new_height
+            driver.back()
+            time.sleep(2)
 
-    files, errors = [], {}    # if some files not crawled, trace them in error list
-    for card_url in cards:
-        driver.get(card_url)
-        time.sleep(2)
-        file_crawl = FileCrawl()
-        try:
-            file_crawl.crawl_file(driver)  # fills .file
-            file_crawl.file['url'] = card_url
-        except Exception as e:
-            errors['cart_url'] = str(e)
-        files.append(file_crawl.file)
+    except Exception as e:
+        raise e
 
-        driver.back()
-        time.sleep(2)
+    finally:
+        driver.quit()
 
-    # Close the browser after the operation
-    driver.quit()
     return (files, errors)
