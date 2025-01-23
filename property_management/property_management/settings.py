@@ -130,14 +130,39 @@ REST_FRAMEWORK = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'exclude_mongodb': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: 'mongo' not in record.getMessage().lower(),
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'filters': ['exclude_mongodb'],
+            'level': 'INFO',  # Change this to INFO to reduce verbosity
+        },
+    },
+    # prevent showing huge logs contents
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',  # only shows significant events (e.g., warnings, errors, and important messages)
+            'propagate': True,
+        },
+        # This logger is for migrations or internal Django processes
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Log only warnings and above for database operations
+            'propagate': False,
         },
     },
     'root': {
         'handlers': ['console'],
-        'level': 'DEBUG',
+        'level': 'INFO',  # Set the root logger level to INFO
     },
 }
 
