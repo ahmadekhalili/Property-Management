@@ -151,7 +151,7 @@ class LoginDivar(views.APIView):
             global divar_verification_code
             for i in range(100):
                 if divar_verification_code['code']:
-                    input_field = parent_box.find_element(By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")
+                    input_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")))
                     input_field.send_keys(divar_verification_code['code'])
                     status = 'ok'
                     divar_verification_code['code'] = ''     # this global variable must reset
