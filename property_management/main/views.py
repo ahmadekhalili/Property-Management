@@ -123,21 +123,21 @@ class LoginDivar(views.APIView):
             driver.refresh()
 
             # 'دیوار من' button
-            navbar_button = driver.find_element(By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")
+            navbar_button = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH,"//button[@class='kt-button kt-button--inlined kt-nav-button nav-bar__btn kt-nav-button--small']")))
             navbar_button.click()
 
             # first get parent element to find sub elements without errors
-            dropdown = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[@class='kt-dropdown-menu__menu kt-dropdown-menu__menu--no-smooth kt-dropdown-menu__menu--open']")))
+            dropdown_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//div[@class='kt-dropdown-menu__menu kt-dropdown-menu__menu--no-smooth kt-dropdown-menu__menu--open']")))
 
-            try:
-                logout_button = dropdown.find_element("xpath", "//button[contains(., 'خروج')]")  # if not found raise
-                if logout_button:
-                    return Response({'status': 'user has logged in before'})
-            except:      # continue running
-                pass
-            # button 'ورود'
-            vorod_button = dropdown.find_element(By.XPATH, "//button[@class='kt-fullwidth-link kt-fullwidth-link--small navbar-my-divar__button-item']")
-            driver.execute_script("arguments[0].click();", vorod_button)
+            # in dropdown_box, several buttons can contain same attrs
+            buttons = dropdown_box.find_elements(By.CLASS_NAME, "kt-fullwidth-link.kt-fullwidth-link--small.navbar-my-divar__button-item")
+            for element in buttons:
+                if element.find_element(By.TAG_NAME, "p").text.strip() == "ورود":  # get only button 'ورود'
+                    # click on 'vorod' button
+                    element.click()
+                    break
+            else:     # if not find 'vorod' button (loop complete to the end)
+                return Response({'status': 'user has logged in before'})
 
             # first get parent_box to find sub elements without errors
             parent_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//section[@class='kt-new-modal kt-new-modal--stickyfooter']")))
@@ -149,7 +149,7 @@ class LoginDivar(views.APIView):
             # wait until send verification code
             status = ''
             global divar_verification_code
-            for i in range(100):
+            for i in range(20):
                 if divar_verification_code['code']:
                     input_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='کد تأیید ۶ رقمی']")))
                     input_field.send_keys(divar_verification_code['code'])
@@ -162,7 +162,7 @@ class LoginDivar(views.APIView):
             if status:
                 return Response({'status': 'successfully logged in'})
             else:
-                return Response({'status': "couldn't log into divar.ir, reset in '/sms_code_divar' GET, and try again"})
+                return Response({'status': "couldn't log into divar.ir"})
         except Exception as e:
             raise e
         finally:

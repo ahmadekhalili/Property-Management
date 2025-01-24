@@ -153,11 +153,10 @@ class FileCrawl:
 
     def crawl_file(self, driver):  # Crawl all the information and add to self.file
         # get the phone number of the client
-        phone_button = driver.find_element(By.XPATH, "//button[@class='kt-button kt-button--primary post-actions__get-contact']")
+        phone_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='kt-button kt-button--primary post-actions__get-contact']")))
         phone_button.click()
-        time.sleep(2)
         try:
-            phone_element = driver.find_element(By.XPATH, "//a[@class='kt-unexpandable-row__action kt-text-truncate']")
+            phone_element = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, "//a[@class='kt-unexpandable-row__action kt-text-truncate']")))
             phone_number = phone_element.get_attribute('href').replace('tel:', '')
             int(phone_number)     # if no phone provided by client, phone_number is some characters not number
         except:      # if it's not prodived phone number, set None
@@ -197,11 +196,10 @@ def crawl_files(location_to_search, max_files=None):
 
     url = "https://divar.ir/s/tehran/buy-apartment"
     driver.get(url)     # Load the web page
-    time.sleep(2)
 
     try:
         # search box
-        search_input = driver.find_element(By.CSS_SELECTOR, 'input.kt-nav-text-field__input')
+        search_input = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'input.kt-nav-text-field__input')))
         search_input.send_keys(location_to_search)  # type in search box to search
         search_input.send_keys(Keys.ENTER)
         time.sleep(1)
