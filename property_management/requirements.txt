@@ -1,34 +1,33 @@
 # **** important ****: run "sudo apt install python3-dev libpq-dev gcc=4:9.3.0-1ubuntu2" before installing this packages (before installing psycopg2 it must installed, gcc required for uwsgi instalation)
 # install gettext (help installation in tutorial/django/translation) for using django translation
-django==4.0.3
-djangorestframework==3.13.1
-django-debug-toolbar==3.2.4
+django==5.1.5
+djangorestframework==3.15.2
+django-debug-toolbar==5.0.1
 django-extensions==3.1.5           # this is for creating visual diagram from database like "python manage.py graph_models -a ..", for more see tutorial/django/visualize database.txt
 django-phonenumber-field==6.1.0    # install package phonenumber_field (in pip list "django-phonenumber-field")
 django-cors-headers==3.11.0        # install package corsheaders, used in settings/INSTALLED_APPS and settings/CORS_ALLOW_ALL_ORIGINS and others
-Pillow==9.0.1                      # python library for working with images like: "from PIL import Image as PilImage" in main/models.py
-psycopg2==2.9.3                    # required for working django with postgres, install 'psycopg2-binary' in windows instead
-phonenumbers==8.12.44              # phonenumber_field needs phonenumbers for working, for exmaple: site-packages/phonenumber_field/formfields.py", line 1: import phonenumbers
-beautifulsoup4==4.10.0             # install bs4 package (BeautifulSoup  library), used in: ictsun/main/methods.py", line 5: from bs4 import BeautifulSoup
-requests==2.27.1                   # install requests library, used in ictsun/main/methods.py", line 6: import requests
-zeep==4.1.0                        # used in ictsun/payment/views.py", line 7: from zeep import Client
+Pillow==10.0.1                     # python library for working with images like: "from PIL import Image as PilImage" in main/models.py
+psycopg2-binary==2.9.6             # required for working django with postgres, install 'psycopg2-binary' in windows instead
+phonenumbers==8.13.15              # phonenumber_field needs phonenumbers for working, for exmaple: site-packages/phonenumber_field/formfields.py", line 1: import phonenumbers
+requests==2.31.0                   # install requests library, used in ictsun/main/methods.py", line 6: import requests
+zeep==4.2.1                        # used in ictsun/payment/views.py", line 7: from zeep import Client
 coreapi==2.3.3                     # used in settings.py/REST_FRAMEWORK/DEFAULT_SCHEMA_CLASS
-celery==5.2.3                      # used in orders/tasks.py
-jdatetime==4.0.0                   # jalali datetime in python
-pymongo
-django-modeltranslation            # adds translation for fields values in nice graphic, in admin panel. latest version should be installed, because now latest version 0.18.9 support django 3.2+ so need keep installing newer version.
-apscheduler                        # enable schedule tasks, like create sitemap.xml every day (in urls.py)
-gunicorn
-pyjwt[crypto]                      # for encode and decode we use pyjwt library and crypto for help encode more advance algoritms (like RSA and ECDSA)
-django-environ                     # add environment variables in settings.py
-drf-extra-fields                   # add Base64ImageField for django rest framework
-drf_spectacular
-channels
-daphne                             # asynchronous server required for channels
+celery==5.3.1                      # used in orders/tasks.py
+jdatetime==4.1.0                   # jalali datetime in python
+pymongo==4.5.0
+django-modeltranslation==0.19.0    # adds translation for fields values in nice graphic, in admin panel. latest version should be installed, because now latest version 0.18.9 support django 3.2+ so need keep installing newer version.
+apscheduler==3.10.1                # enable schedule tasks, like create sitemap.xml every day (in urls.py)
+gunicorn==21.2.0
+pyjwt[crypto]==2.8.0               # for encode and decode we use pyjwt library and crypto for help encode more advance algoritms (like RSA and ECDSA)
+django-environ==0.10.0             # add environment variables in settings.py
+drf-extra-fields==3.5.0            # add Base64ImageField for django rest framework
+drf-spectacular==0.27.0
+channels==4.0.0
+daphne==4.1.2                      # asynchronous server required for channels
 onetomultipleimage                 # add 'ImageCreationSizes' class and ... to the project
 mongoserializer                    # save models like post to the MongoDB
 selenium==4.24.0
-#drf-yasg==1.21.3                  # it's a django framework that create swagger schema form django models for showing in swagger ui. we don't need it because we write swagger schema handy.  this use OpenAPI2 and will not update to UpenAPI3 soon, there is another package drf-spectacular (v0.23.1 now) use OpenAPI3 with more pupolar devolopers. may after releasing stable version of drf-spectacular this chosen.
+djangorestframework-simplejwt==5.4.0  # used for Token Based Authentication
 # package: folder name and import name, for example in BeautifulSoup library, bs4 is a folder name in site-packages and imported like (from bs4 import ...) so bs4 is package
 # library: official name of that software in internet (doc, goodle ...)
 # run "pip install -r requirements.txt" to install all packages listed here.
