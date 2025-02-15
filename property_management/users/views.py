@@ -15,8 +15,10 @@ import jwt
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, TokenObtainPairSerializerCustom
 from .methods import login_validate
 from .models import User
 from main.methods import DictToObject
@@ -29,6 +31,10 @@ username, password, db_name = quote_plus(env('MONGO_USER_NAME')), quote_plus(env
 host = env('MONGO_HOST')
 uri = f"mongodb://{username}:{password}@{host}:27017/{db_name}?authSource={db_name}"
 mongo_db = pymongo.MongoClient(uri)[db_name]
+
+
+class TokenObtainPairViewCustom(TokenObtainPairView):
+    serializer_class = TokenObtainPairSerializerCustom
 
 
 class LogIn(views.APIView):
@@ -107,6 +113,19 @@ class TestSignUp(views.APIView):
         #SessionAuthenticationCustom().enforce_csrf(request)
         serializer = UserSerializer(User.objects.create(phone=request.data['phone']))
         return Response({'message': _('user successfully created.'), **serializer.data})
+
+
+class LogoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({'message': 'Logged out successfully'}, status=200)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
 
 class UserUpdate(views.APIView):

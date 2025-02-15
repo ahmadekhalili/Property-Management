@@ -1,10 +1,13 @@
 from django.urls import reverse
+from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 import jdatetime
 import urllib.parse
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User
 from .methods import user_name_shown
@@ -93,3 +96,16 @@ class UserNameSerializer(serializers.ModelSerializer):  # accept id as data (in 
 
     def get_user_name(self, obj):
         return user_name_shown(obj, 'کاربر')
+
+
+class TokenObtainPairSerializerCustom(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # Extract phone and password from the incoming data
+        phone, password = attrs.get('phone'), attrs.get('password')
+        user = authenticate(request=self.context['request'], phone=phone, password=password)
+        if not user:
+            raise AuthenticationFailed('Invalid phone or password.')
+        # Generate token using the parent class logic
+        data = super().validate(attrs)   # contain: {'refresh': ..., 'access': ...}
+        data['user'] = {'id': user.id, 'phone': str(user.phone)}
+        return data

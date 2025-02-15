@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 import environ
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'django.contrib.sitemaps',
     'django.contrib.sites',
 ]
@@ -99,6 +102,11 @@ DATABASES = {
     },
 }
 
+# customize 'django.contrib.auth.authenticate' behavior to use 'phone' instead 'username'
+AUTHENTICATION_BACKENDS = [
+    'users.auth_backends.PhoneBackend',
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -120,8 +128,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'customed_files.rest_framework.classes.authentication.SessionAuthenticationCustom',
     ),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
     }
 
 # Internationalization
@@ -185,8 +195,9 @@ LANGUAGES = (
 PHONENUMBER_DEFAULT_REGION = 'IR'
 PHONENUMBER_DB_FORMAT = 'NATIONAL'
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "static"  # specify storage address of 'manage.py collectstatic', and server static apps
+#STATICFILES_DIRS = [BASE_DIR / "static"]  # serve additional location by django (we dont need it in production at all)
 
 LOCALE_PATHS = (BASE_DIR / 'locale', )
 
@@ -220,10 +231,21 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 # and reverse()
 SITE_ID = 1
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Adjust lifetime for security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,      # reset 'refresh' token while 'access' token refreshed
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,  # Use your Django SECRET_KEY for signing tokens
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
 # custom added vars (vars that aren't used by eny application or library and is only for personal usage)
 CART_SESSION_ID = 'cart'
 IMAGES_PATH_TYPE = 'jalali'  # 'jalali' or 'gregorian',  in gregorian images saves like: products_images/2023/06/03
 POST_STEP = 6       # 6 means you will see 6 post in every PostList page, used in PostList view and main/sitemap.py
 FILE_STEP = 6
 DEFAULT_SCHEME = 'http'   # uses in sitmape.py because we dont have access to request and request.scheme
-SECRET_HS = 'mysecret'    # used in HS256 in users send sms
+SECRET_HS = env('secret_hs')    # used in HS256 in users send sms

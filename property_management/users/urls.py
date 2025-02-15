@@ -1,13 +1,17 @@
-from django.contrib.auth import views as django_views
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
 from . import views
 
 app_name = 'users'
 
 urlpatterns = [
+    path('token/', views.TokenObtainPairViewCustom.as_view(), name='token_obtain_pair'),  # Login
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refresh token
+    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),  # Verify token
+
     path('login/', views.LogIn.as_view(), name='loginview'),
-    path('logout/', django_views.LogoutView.as_view(), name='logout'),       # this is exactly like rest_framework/urls
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     path('sendsms/', views.SendSMS.as_view(), name='sendsms'),
     path('signup/', views.SignUp.as_view(), name='signupview'),
     path('signup/<int:pk>/', views.SignUp.as_view(), name='signup-update'),
