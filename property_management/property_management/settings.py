@@ -248,4 +248,4 @@ IMAGES_PATH_TYPE = 'jalali'  # 'jalali' or 'gregorian',  in gregorian images sav
 POST_STEP = 6       # 6 means you will see 6 post in every PostList page, used in PostList view and main/sitemap.py
 FILE_STEP = 6
 DEFAULT_SCHEME = 'http'   # uses in sitmape.py because we dont have access to request and request.scheme
-SECRET_HS = env('secret_hs')    # used in HS256 in users send sms
+SECRET_HS = env('SECRET_HS')    # used in HS256 in users send sms
