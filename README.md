@@ -96,8 +96,8 @@ To set up and run this project using Docker, follow these steps:
 
 1. Clone this repository:
    ```sh
-   git clone <repository-url>
-   cd <project-directory>
+   git clone https://github.com/ahmadekhalili/docker-Property
+   cd docker-Property
    ```
 2. Create and run DBs (Mongo and Postgres)
    ```sh
@@ -105,5 +105,7 @@ To set up and run this project using Docker, follow these steps:
    ```
 3. Run the docker:
    ```sh
-   docker run -p 8080:8080 <image-name>
+   docker compose up -d
    ```
+
+now site accessible in 0.0.0.0:8000.
